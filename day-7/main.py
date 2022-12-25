@@ -80,16 +80,22 @@ def find_dirs_under_size(directory, size_limit):
     return dirs
 
 
-def find_dirs_over_size(directory, size_limit):
-    dirs = set()
-    if directory.size > size_limit:
-        dirs.add(directory)
-    for item in directory.items:
-        if item.is_directory:
-            if item.size >= size_limit:
-                dirs.add(item)
-            dirs.union(find_dirs_over_size(item, size_limit))
+def get_all_dirs(directory):
+    dirs = []
+    dirs.append(directory)
+    for d in directory.items:
+        if d.is_directory:
+            dirs.extend(get_all_dirs(d))
     return dirs
+
+
+def find_dirs_over_size(directory, size_limit):
+    dirs = get_all_dirs(directory)
+    sizes = [d.size for d in dirs]
+    sizes.sort()
+    for s in sizes:
+        if s > size_limit:
+            return s
 
 
 def find_smallest_dir_to_delete(directory, unused_space_needed, total_space_on_disk):
@@ -99,9 +105,9 @@ def find_smallest_dir_to_delete(directory, unused_space_needed, total_space_on_d
         return None
     else:
         target_size = unused_space_needed + total_space_taken - total_space_on_disk
-        dirs = find_dirs_over_size(directory, target_size)
-        print(f'Directories over size: {dirs}')
-        return min([d.size for d in dirs])
+        size = find_dirs_over_size(directory, target_size)
+        print(f'Directories over size: {size}')
+        return size
 
 
 
